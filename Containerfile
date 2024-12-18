@@ -6,15 +6,14 @@ FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION
 RUN mkdir -p /var/roothome
 
 # Total hack to see if we can fix the /var/run symlink
-RUN mkdir -p /var/run
-RUN ln -sf /var/run /run
+RUN ln -sf ../run /var/run
 
+#Install codecs, Workstation, EPEL, CRB, etc.
 COPY build.sh /tmp/build.sh
-
 RUN chmod +x /tmp/build.sh &&\
     /tmp/build.sh && \
     dnf clean all && \
     ostree container commit
 
 # Just gotta get this green!
-RUN bootc container lint || exit 0
+RUN bootc container lint
