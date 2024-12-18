@@ -1,23 +1,19 @@
 # CentOS Workstation
 
-CentOS Stream-based images so that you can build your own ones easier.
-
-How this is expected to be consumed:
+CentOS Stream-based image with @Workstation preinstalled. How this is expected to be consumed:
 
 ```Dockerfile
 FROM ghcr.io/centos-workstation/main:latest # (or whatever tag you want)
-
-RUN dnf -y group install -y Workstation # or some other desktop
-
 RUN dnf -y install htop fastfetch
+
+$your_hopes_and_dreams_go_here.
 
 RUN bootc container lint
 ```
 
 ## Goals
 
-We want to avoid mistakes we ran into while building [Universal Blue](https://github.com/ublue-os/). This should be entirely [Bootc](https://github.com/containers/bootc) centric with actual 
-upstream patterns, keeping maintainability in mind right out of the box.
+Taking the lessons from [Universal Blue](https://github.com/ublue-os/) but built entirely with [bootc](https://github.com/containers/bootc)
 
 We aim to:
 
