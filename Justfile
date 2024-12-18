@@ -98,48 +98,48 @@ build centos_version="stream10" tag="latest":
         .
 
 build-vm image type="qcow2":
-  #!/usr/bin/env bash
-  set -euo pipefail
-  TARGET_IMAGE={{ image }}
+    #!/usr/bin/env bash
+    set -euo pipefail
+    TARGET_IMAGE={{ image }}
 
-  if ! sudo podman image exists $TARGET_IMAGE ; then
-    echo "Ensuring image is on root storage"
-    COPYTMP=$(mktemp -p "${PWD}" -d -t _build_podman_scp.XXXXXXXXXX)
-    sudo podman image scp $USER@localhost::$TARGET_IMAGE root@localhost:: 
-    rm -rf "${COPYTMP}"
-  fi
-  
-  echo "Cleaning up previous build"
-  sudo rm -rf output || true
-  mkdir -p output
-  sudo podman run \
-    --rm \
-    -it \
-    --privileged \
-    --pull=newer \
-    --security-opt label=type:unconfined_t \
-    -v $(pwd)/image-builder.config.toml:/config.toml:ro \
-    -v $(pwd)/output:/output \
-    -v /var/lib/containers/storage:/var/lib/containers/storage \
-    quay.io/centos-bootc/bootc-image-builder:latest \
-    --type {{ type }} \
-    --local \
-    $TARGET_IMAGE
+    if ! sudo podman image exists $TARGET_IMAGE ; then
+      echo "Ensuring image is on root storage"
+      COPYTMP=$(mktemp -p "${PWD}" -d -t _build_podman_scp.XXXXXXXXXX)
+      sudo podman image scp $USER@localhost::$TARGET_IMAGE root@localhost:: 
+      rm -rf "${COPYTMP}"
+    fi
 
-  sudo chown -R $USER:$USER output
-  echo "making the image biggerer"
-  sudo qemu-img resize output/qcow2/disk.qcow2 80G
+    echo "Cleaning up previous build"
+    sudo rm -rf output || true
+    mkdir -p output
+    sudo podman run \
+      --rm \
+      -it \
+      --privileged \
+      --pull=newer \
+      --security-opt label=type:unconfined_t \
+      -v $(pwd)/image-builder.config.toml:/config.toml:ro \
+      -v $(pwd)/output:/output \
+      -v /var/lib/containers/storage:/var/lib/containers/storage \
+      quay.io/centos-bootc/bootc-image-builder:latest \
+      --type {{ type }} \
+      --local \
+      $TARGET_IMAGE
+
+    sudo chown -R $USER:$USER output
+    echo "making the image biggerer"
+    sudo qemu-img resize output/qcow2/disk.qcow2 80G
 
 run-vm:
-  virsh dominfo centos-workstation-main &> /dev/null && \
-  ( virsh destroy centos-workstation-main ; virsh undefine centos-workstation-main ) 
-  virt-install --import \
-  --name centos-workstation-main \
-  --disk output/qcow2/disk.qcow2,format=qcow2,bus=virtio \
-  --memory 4096 \
-  --vcpus 4 \
-  --os-variant centos-stream9 \
-  --network bridge:virbr0 \
-  --graphics vnc
+    virsh dominfo centos-workstation-main &> /dev/null && \
+    ( virsh destroy centos-workstation-main ; virsh undefine centos-workstation-main ) 
+    virt-install --import \
+    --name centos-workstation-main \
+    --disk output/qcow2/disk.qcow2,format=qcow2,bus=virtio \
+    --memory 4096 \
+    --vcpus 4 \
+    --os-variant centos-stream9 \
+    --network bridge:virbr0 \
+    --graphics vnc
 
-  virsh start centos-workstation-main
+    virsh start centos-workstation-main
