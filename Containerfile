@@ -6,7 +6,7 @@ FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION
 RUN mkdir -p /var/roothome
 
 # Total hack to see if we can fix the /var/run symlink
-RUN ln -sf ../run /var/run
+RUN ln -sf /run /var/run
 
 #Install codecs, Workstation, EPEL, CRB, etc.
 COPY build.sh /tmp/build.sh
