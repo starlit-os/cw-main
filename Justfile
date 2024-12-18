@@ -164,7 +164,7 @@ generate-default-tag tag="latest":
 [group('Utility')]
 generate-build-tags tag="latest" ghcr="0" $version="" github_event="" github_number="":
     #!/usr/bin/bash
-    set -eou pipefail
+    set -eoux pipefail
 
     TODAY="$(date +%A)"
     if [[ {{ ghcr }} == "0" ]]; then
@@ -182,6 +182,8 @@ generate-build-tags tag="latest" ghcr="0" $version="" github_event="" github_num
     # Arrays for Tags
     BUILD_TAGS=()
     COMMIT_TAGS=()
+
+    BUILD_TAGS+=($(date +%Y%m%d))
 
     # Commit Tags
     github_number="{{ github_number }}"
