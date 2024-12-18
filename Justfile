@@ -1,5 +1,6 @@
-repo_organization := "centos-workstation-folks"
-image_name := "centos-workstation"
+repo_organization := "centos-workstation"
+image_name := "main"
+iso_builder_image := "ghcr.io/jasonn3/build-container-installer:v1.2.3"
 
 [private]
 default:
@@ -75,7 +76,6 @@ build centos_version="stream10" tag="latest":
         ver="${tag}-${centos_version}.$(date +%Y%m%d)"
     fi
 
- 
     BUILD_ARGS=()
     BUILD_ARGS+=("--build-arg" "CENTOS_MAJOR_VERSION=${centos_version}")
     # BUILD_ARGS+=("--build-arg" "IMAGE_NAME=${image_name}")
@@ -97,3 +97,36 @@ build centos_version="stream10" tag="latest":
         "${LABELS[@]}" \
         --tag "${image_name}:${tag}" \
         .
+
+build-vm image type="qcow2":
+  #!/usr/bin/env bash
+  set -euo pipefail
+  TARGET_IMAGE={{ image }}
+
+  if ! sudo podman image exists $TARGET_IMAGE ; then
+    echo "Ensuring image is on root storage"
+    sudo podman image scp $USER@localhost::$TARGET_IMAGE root@localhost:: 
+  fi
+  
+  echo "Cleaning up previous build"
+  sudo rm -rf output || true
+  mkdir -p output
+  sudo podman run \
+    --rm \
+    -it \
+    --privileged \
+    --pull=newer \
+    --security-opt label=type:unconfined_t \
+    -v $(pwd)/image-builder.config.toml:/config.toml:ro \
+    -v $(pwd)/output:/output \
+    -v /var/lib/containers/storage:/var/lib/containers/storage \
+    quay.io/centos-bootc/bootc-image-builder:latest \
+    --type {{ type }} \
+    --rootfs btrfs \
+    --local \
+    $TARGET_IMAGE
+
+  sudo chown -R $USER:$USER output
+
+run-vm image type="qcow2":
+    @echo WIP

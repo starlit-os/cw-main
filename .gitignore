@@ -1,1 +1,5 @@
 cosign.key
+output/
+*.raw
+*.qcow2
+
