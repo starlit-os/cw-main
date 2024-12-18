@@ -3,8 +3,7 @@ ARG MAJOR_VERSION="${CENTOS_MAJOR_VERSION:-stream10}"
 FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION
 
 # See https://github.com/centos-workstation/achillobator/issues/3
-RUN mkdir -p /var/roothome && \
-    rm /var/run && ln -sf /run /var/run
+RUN mkdir -p /var/roothome && ln -sf /run /var/run
 
 COPY build.sh /tmp/build.sh
 
