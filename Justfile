@@ -122,11 +122,21 @@ build-vm image type="qcow2":
     -v /var/lib/containers/storage:/var/lib/containers/storage \
     quay.io/centos-bootc/bootc-image-builder:latest \
     --type {{ type }} \
-    --rootfs btrfs \
     --local \
     $TARGET_IMAGE
 
   sudo chown -R $USER:$USER output
+  echo "making the image biggerer"
+  sudo qemu-img resize output/qcow2/disk.qcow2 80G
 
-run-vm image type="qcow2":
-    @echo WIP
+run-vm:
+  virt-install --import \
+  --name centos-workstation-main \
+  --disk output/qcow2/disk.qcow2,format=qcow2,bus=virtio \
+  --memory 4096 \
+  --vcpus 4 \
+  --os-variant centos-stream9 \
+  --network bridge:virbr0 \
+  --graphics vnc
+
+  virsh start centos-workstation-main
