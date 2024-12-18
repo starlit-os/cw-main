@@ -4,6 +4,8 @@ FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION
 
 # See https://github.com/centos-workstation/achillobator/issues/3
 RUN mkdir -p /var/roothome
+
+# Total hack to see if we can fix the /var/run symlink
 RUN mkdir -p /var/run
 RUN ln -sf /var/run /run
 
