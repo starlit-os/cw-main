@@ -74,9 +74,9 @@ build $target_image=image_name $tag=default_tag:
     BUILD_ARGS+=("--build-arg" "MAJOR_VERSION=${centos_version}")
     # BUILD_ARGS+=("--build-arg" "IMAGE_NAME=${image_name}")
     # BUILD_ARGS+=("--build-arg" "IMAGE_VENDOR=${repo_organization}")
-    if [[ -z "$(git status -s)" ]]; then
-        BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
-    fi
+    # if [[ -z "$(git status -s)" ]]; then
+    #     BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
+    # fi
 
     LABELS=()
     LABELS+=("--label" "org.opencontainers.image.title=${image_name}")
@@ -92,16 +92,36 @@ build $target_image=image_name $tag=default_tag:
         --tag "${target_image}:${tag}" \
         .
 
-_build-bib $target_image $tag $type $config:
+_rootful_load_image $target_image=image_name $tag=default_tag:
+    #!/usr/bin/bash
+    set -eoux pipefail
+
+    if [[ -n "${SUDO_USER:-}" || "${UID}" -eq "0" ]]; then
+        echo "Already root or running under sudo, no need to load image from user podman."
+        exit 0
+    fi
+
+    set +e
+    resolved_tag=$(podman inspect -t image "${target_image}:${tag}" | jq -r '.[].RepoTags.[0]')
+    return_code=$?
+    set -e
+
+    if [[ $return_code -eq 0 ]]; then
+        # Load into Rootful Podman
+        ID=$(just sudoif podman images --filter reference="${target_image}:${tag}" --format "'{{ '{{.ID}}' }}'")
+        if [[ -z "$ID" ]]; then
+            COPYTMP=$(mktemp -p "${PWD}" -d -t _build_podman_scp.XXXXXXXXXX)
+            just sudoif TMPDIR=${COPYTMP} podman image scp ${UID}@localhost::"${target_image}:${tag}" root@localhost::"${target_image}:${tag}"
+            rm -rf "${COPYTMP}"
+        fi
+    else
+        # Make sure the image is present and/or up to date
+        just sudoif podman pull "${target_image}:${tag}"
+    fi
+
+_build-bib $target_image $tag $type $config: (_rootful_load_image target_image tag)
     #!/usr/bin/env bash
     set -euo pipefail
-
-    if ! sudo podman image exists "${target_image}" ; then
-      echo "Ensuring image is on root storage"
-      COPYTMP=$(mktemp -p "${PWD}" -d -t _build_podman_scp.XXXXXXXXXX)
-      sudo podman image scp "$USER@localhost::${target_image}" root@localhost::
-      rm -rf "${COPYTMP}"
-    fi
 
     echo "Cleaning up previous build"
     sudo rm -rf "output/${type}" || true
