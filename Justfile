@@ -130,6 +130,8 @@ build-vm image type="qcow2":
   sudo qemu-img resize output/qcow2/disk.qcow2 80G
 
 run-vm:
+  virsh dominfo centos-workstation-main &> /dev/null && \
+  ( virsh destroy centos-workstation-main ; virsh undefine centos-workstation-main ) 
   virt-install --import \
   --name centos-workstation-main \
   --disk output/qcow2/disk.qcow2,format=qcow2,bus=virtio \
