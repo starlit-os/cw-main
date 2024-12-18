@@ -7,6 +7,6 @@ dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noar
 
 dnf -y install @multimedia gstreamer1-plugins-{bad-*,good-*,base} lame*
 
-dnf -y install @workstation
+dnf group install -y --nobest Workstation
 
 dnf -y install btrfs-progs
