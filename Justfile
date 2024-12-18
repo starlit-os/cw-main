@@ -1,6 +1,5 @@
 repo_organization := "centos-workstation"
 image_name := "main"
-iso_builder_image := "ghcr.io/jasonn3/build-container-installer:v1.2.3"
 
 [private]
 default:
@@ -77,7 +76,7 @@ build centos_version="stream10" tag="latest":
     fi
 
     BUILD_ARGS=()
-    BUILD_ARGS+=("--build-arg" "CENTOS_MAJOR_VERSION=${centos_version}")
+    BUILD_ARGS+=("--build-arg" "MAJOR_VERSION=${centos_version}")
     # BUILD_ARGS+=("--build-arg" "IMAGE_NAME=${image_name}")
     # BUILD_ARGS+=("--build-arg" "IMAGE_VENDOR={{ repo_organization }}")
     if [[ -z "$(git status -s)" ]]; then
@@ -105,7 +104,9 @@ build-vm image type="qcow2":
 
   if ! sudo podman image exists $TARGET_IMAGE ; then
     echo "Ensuring image is on root storage"
+    COPYTMP=$(mktemp -p "${PWD}" -d -t _build_podman_scp.XXXXXXXXXX)
     sudo podman image scp $USER@localhost::$TARGET_IMAGE root@localhost:: 
+    rm -rf "${COPYTMP}"
   fi
   
   echo "Cleaning up previous build"
