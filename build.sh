@@ -9,6 +9,4 @@ dnf -y install @multimedia gstreamer1-plugins-{bad-*,good-*,base} lame*
 
 dnf group install -y --nobest Workstation
 
-dnf -y install btrfs-progs
-
 systemctl enable gdm.service
