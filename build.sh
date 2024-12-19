@@ -14,6 +14,6 @@ dnf -y install @multimedia gstreamer1-plugins-{bad-*,good-*,base} lame*
 
 dnf group install -y --nobest Workstation
 
-dnf remove -y $(dnf repoquery --installonly --latest-limit 1 -q)
+# dnf remove -y $(dnf repoquery --installonly --latest-limit 1 -q)
 
 systemctl enable gdm.service
