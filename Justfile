@@ -1,6 +1,7 @@
-export repo_organization := "centos-workstation"
-export image_name := "main"
-export centos_version := "stream10"
+export repo_organization := env("GITHUB_REPOSITORY_OWNER", "centos-workstation")
+export image_name := env("IMAGE_NAME", "main")
+export centos_version := env("CENTOS_VERSION", "stream10")
+export default_tag := env("DEFAULT_TAG", "latest")
 
 [private]
 default:
@@ -63,7 +64,7 @@ sudoif command *args:
     }
     sudoif {{ command }} {{ args }}
 
-build $centos_version="stream10" $tag="latest":
+build $target_image=image_name $tag=default_tag:
     #!/usr/bin/env bash
 
     # Get Version
@@ -88,10 +89,10 @@ build $centos_version="stream10" $tag="latest":
     podman build \
         "${BUILD_ARGS[@]}" \
         "${LABELS[@]}" \
-        --tag "${image_name}:${tag}" \
+        --tag "${target_image}:${tag}" \
         .
 
-build-vm $target_image=("localhost/" + image_name) $tag="latest" $type="qcow2":
+build-vm $target_image=("localhost/" + image_name) $tag=default_tag $type="qcow2":
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -143,84 +144,3 @@ run-vm:
     --graphics vnc
 
     virsh start centos-workstation-main
-
-[private]
-centos_version:
-    echo "{{ centos_version }}"
-
-[private]
-image_name:
-    echo "{{ image_name }}"
-
-# Generate Default Tag
-[group('Utility')]
-generate-default-tag tag="latest":
-    #!/usr/bin/bash
-    set -eou pipefail
-
-    echo "{{ tag }}"
-
-# Generate Tags
-[group('Utility')]
-generate-build-tags tag="latest" ghcr="0" $version="" github_event="" github_number="":
-    #!/usr/bin/bash
-    set -eoux pipefail
-
-    TODAY="$(date +%A)"
-    if [[ {{ ghcr }} == "0" ]]; then
-        rm -f /tmp/manifest.json
-    fi
-    CENTOS_VERSION="{{ centos_version }}"
-    DEFAULT_TAG=$(just generate-default-tag {{ tag }})
-    IMAGE_NAME={{ image_name }}
-    # Use Build Version from Rechunk
-    if [[ -z "${version:-}" ]]; then
-        version="{{ tag }}-${CENTOS_VERSION}.$(date +%Y%m%d)"
-    fi
-    version=${version#{{ tag }}-}
-
-    # Arrays for Tags
-    BUILD_TAGS=()
-    COMMIT_TAGS=()
-
-    BUILD_TAGS+=($(date +%Y%m%d))
-
-    # Commit Tags
-    github_number="{{ github_number }}"
-    SHA_SHORT="$(git rev-parse --short HEAD)"
-    if [[ "{{ ghcr }}" == "1" ]]; then
-        COMMIT_TAGS+=(pr-${github_number:-}-{{ tag }}-${version})
-        COMMIT_TAGS+=(${SHA_SHORT}-{{ tag }}-${version})
-    fi
-
-    # Convenience Tags
-    BUILD_TAGS+=("{{ tag }}")
-
-    # Weekly Stable / Rebuild Stable on workflow_dispatch
-    github_event="{{ github_event }}"
-    BUILD_TAGS+=("${CENTOS_VERSION}" "${version}")
-
-    if [[ "${github_event}" == "pull_request" ]]; then
-        alias_tags=("${COMMIT_TAGS[@]}")
-    else
-        alias_tags=("${BUILD_TAGS[@]}")
-    fi
-
-    echo "${alias_tags[*]}"
-
-[group('Utility')]
-tag-images image_name="" default_tag="" tags="":
-    #!/usr/bin/bash
-    set -eou pipefail
-
-    # Get Image, and untag
-    IMAGE=$(podman inspect localhost/{{ image_name }}:{{ default_tag }} | jq -r .[].Id)
-    podman untag localhost/{{ image_name }}:{{ default_tag }}
-
-    # Tag Image
-    for tag in {{ tags }}; do
-        podman tag $IMAGE {{ image_name }}:${tag}
-    done
-
-    # Show Images
-    podman images
