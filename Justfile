@@ -92,7 +92,7 @@ build $target_image=image_name $tag=default_tag:
         --tag "${target_image}:${tag}" \
         .
 
-build-vm $target_image=("localhost/" + image_name) $tag=default_tag $type="qcow2":
+_build-bib $target_image $tag $type $config:
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -104,8 +104,8 @@ build-vm $target_image=("localhost/" + image_name) $tag=default_tag $type="qcow2
     fi
 
     echo "Cleaning up previous build"
-    sudo rm -rf output || true
-    mkdir -p output
+    sudo rm -rf "output/${type}" || true
+    sudo rm "output/manifest-${type}.json" || true
 
     args="--type ${type}"
 
@@ -113,34 +113,94 @@ build-vm $target_image=("localhost/" + image_name) $tag=default_tag $type="qcow2
       args+=" --local"
     fi
 
-    echo "${args}"
     sudo podman run \
       --rm \
       -it \
       --privileged \
       --pull=newer \
       --security-opt label=type:unconfined_t \
-      -v $(pwd)/image-builder.config.toml:/config.toml:ro \
+      -v $(pwd)/${config} \
       -v $(pwd)/output:/output \
       -v /var/lib/containers/storage:/var/lib/containers/storage \
       quay.io/centos-bootc/bootc-image-builder:latest \
       ${args} \
       "${target_image}"
 
-      sudo chown -R $USER:$USER output
+    sudo chown -R $USER:$USER output
+
+    if [[ $type == qcow2 ]]; then
       echo "making the image biggerer"
-      sudo qemu-img resize output/qcow2/disk.qcow2 80G
+      sudo qemu-img resize "output/qcow2/disk.qcow2" 80G
+    fi
 
-run-vm:
-    virsh dominfo centos-workstation-main &> /dev/null && \
-    ( virsh destroy centos-workstation-main ; virsh undefine centos-workstation-main ) 
-    virt-install --import \
-    --name centos-workstation-main \
-    --disk output/qcow2/disk.qcow2,format=qcow2,bus=virtio \
-    --memory 4096 \
-    --vcpus 4 \
-    --os-variant centos-stream9 \
-    --network bridge:virbr0 \
-    --graphics vnc
 
-    virsh start centos-workstation-main
+build-vm $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "qcow2" "image-builder.config.toml")
+build-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "iso" "image-builder-iso.config.toml")
+
+run-vm $target_image=("localhost/" + image_name) $tag=default_tag:
+    #!/usr/bin/bash
+    set -eoux pipefail
+
+    qcow2_file="output/qcow2/disk.qcow2"
+
+    if [[ ! -f "${qcow2_file}" ]]; then
+        just build-vm "$target_image" "$tag"
+    fi
+
+    # Determine which port to use
+    port=8006;
+    while grep -q :${port} <<< $(ss -tunalp); do
+        port=$(( port + 1 ))
+    done
+    echo "Using Port: ${port}"
+    echo "Connect to http://localhost:${port}"
+    run_args=()
+    run_args+=(--rm --privileged)
+    run_args+=(--pull=newer)
+    run_args+=(--publish "127.0.0.1:${port}:8006")
+    run_args+=(--env "CPU_CORES=4")
+    run_args+=(--env "RAM_SIZE=8G")
+    run_args+=(--env "DISK_SIZE=64G")
+    # run_args+=(--env "BOOT_MODE=windows_secure")
+    run_args+=(--env "TPM=Y")
+    run_args+=(--env "GPU=Y")
+    run_args+=(--device=/dev/kvm)
+    run_args+=(--volume "${PWD}/${qcow2_file}":"/boot.qcow2")
+    run_args+=(docker.io/qemux/qemu-docker)
+    podman run "${run_args[@]}" &
+    xdg-open http://localhost:${port}
+    fg "%podman"
+
+run-iso $target_image=("localhost/" + image_name) $tag=default_tag:
+    #!/usr/bin/bash
+    set -eoux pipefail
+
+    iso_file="output/iso/myiso.iso"
+
+    if [[ ! -f "${iso_file}" ]]; then
+        just build-iso "$target_image" "$tag"
+    fi
+
+    # Determine which port to use
+    port=8006;
+    while grep -q :${port} <<< $(ss -tunalp); do
+        port=$(( port + 1 ))
+    done
+    echo "Using Port: ${port}"
+    echo "Connect to http://localhost:${port}"
+    run_args=()
+    run_args+=(--rm --privileged)
+    run_args+=(--pull=newer)
+    run_args+=(--publish "127.0.0.1:${port}:8006")
+    run_args+=(--env "CPU_CORES=4")
+    run_args+=(--env "RAM_SIZE=8G")
+    run_args+=(--env "DISK_SIZE=64G")
+    # run_args+=(--env "BOOT_MODE=windows_secure")
+    run_args+=(--env "TPM=Y")
+    run_args+=(--env "GPU=Y")
+    run_args+=(--device=/dev/kvm)
+    run_args+=(--volume "${PWD}/${iso_file}":"/boot.iso")
+    run_args+=(docker.io/qemux/qemu-docker)
+    podman run "${run_args[@]}" &
+    xdg-open http://localhost:${port}
+    fg "%podman"
