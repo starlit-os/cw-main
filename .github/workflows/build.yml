@@ -106,7 +106,7 @@ jobs:
         id: build-image
         shell: bash
         run: |
-          IMAGE_FULL="${steps.registry_case.outputs.lowercase}/${IMAGE_NAME}"
+          IMAGE_FULL="${{ steps.registry_case.outputs.lowercase }}/${IMAGE_NAME}"
           just build "${IMAGE_FULL}" "${DEFAULT_TAG}"
 
       - name: Login to GitHub Container Registry
@@ -126,7 +126,7 @@ jobs:
           command: |
             set -euox pipefail
 
-            IMAGE_FULL="${steps.registry_case.outputs.lowercase}/${IMAGE_NAME}"
+            IMAGE_FULL="${{ steps.registry_case.outputs.lowercase }}/${IMAGE_NAME}"
             for tag in ${{ steps.generate-tags.outputs.alias_tags }}; do
               podman push "${IMAGE_FULL}:${DEFAULT_TAG}" "${IMAGE_FULL}:${tag}"
             done
@@ -142,7 +142,7 @@ jobs:
       - name: Sign container image
         if: github.event_name != 'pull_request'
         run: |
-          IMAGE_FULL="${steps.registry_case.outputs.lowercase}/${IMAGE_NAME}"
+          IMAGE_FULL="${{ steps.registry_case.outputs.lowercase }}/${IMAGE_NAME}"
           cosign sign -y --key env://COSIGN_PRIVATE_KEY ${IMAGE_FULL}@${TAGS}
         env:
           TAGS: ${{ steps.push.outputs.outputs && fromJSON(steps.push.outputs.outputs).digest }}
