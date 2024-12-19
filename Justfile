@@ -133,8 +133,8 @@ _build-bib $target_image $tag $type $config:
       sudo qemu-img resize "output/qcow2/disk.qcow2" 80G
     fi
 
-
 build-vm $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "qcow2" "image-builder.config.toml")
+
 build-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "iso" "image-builder-iso.config.toml")
 
 run-vm $target_image=("localhost/" + image_name) $tag=default_tag:
