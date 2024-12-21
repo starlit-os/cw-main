@@ -14,8 +14,10 @@ dnf -y install @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base}
 
 dnf group install -y --nobest Workstation 
 
-#update and cleanup
 dnf upgrade -y
-dnf remove -y $(dnf repoquery --installonly --latest-limit 1 -q)
+# This seems weirdly like a Schrödinger's issue. Removing the kernel here fails some builds and not removing it actually-
+# breaks some stuff? I dont know exactly what to do here.
+# FIXME: Figure out if this is necessary
+# dnf remove -y $(dnf repoquery --installonly --latest-limit 1 -q)
 
 systemctl enable gdm.service
