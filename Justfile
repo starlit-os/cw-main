@@ -159,7 +159,7 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
       --privileged \
       --pull=newer \
       --security-opt label=type:unconfined_t \
-      -v $(pwd)/${config} \
+      -v $(pwd)/${config}:config:/config.toml:ro \
       -v $(pwd)/output:/output \
       -v /var/lib/containers/storage:/var/lib/containers/storage \
       "${bib_image}" \
