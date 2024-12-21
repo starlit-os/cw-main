@@ -10,9 +10,10 @@ ln -sf /run /var/run
 dnf config-manager --set-enabled crb
 dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
 
-dnf -y install @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base} lame{,-libs} libjxl
+dnf -y install @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base} lame{,-libs} libjxl plymouth plymouth-system-theme
 
-dnf group install -y --nobest Workstation
+dnf group install -y --nobest Workstation 
+
 
 # dnf remove -y $(dnf repoquery --installonly --latest-limit 1 -q)
 
