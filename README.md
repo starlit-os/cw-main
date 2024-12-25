@@ -1,5 +1,8 @@
 # CentOS Workstation
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/79d1f4c2595841bd87f2483ffe1b9340)](https://app.codacy.com/gh/centos-workstation/main/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![build-centos-image](https://github.com/centos-workstation/main/actions/workflows/build.yml/badge.svg)](https://github.com/centos-workstation/main/actions/workflows/build.yml)
+
 CentOS Stream-based image with @Workstation preinstalled. How this is expected to be consumed:
 
 ```Dockerfile
