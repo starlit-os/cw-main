@@ -22,5 +22,10 @@ We aim to:
 just the base, you that the users consume and install the desktops on (we also should provide hardware enablement right from here.)
 - Contribute to upstream as much as possible to make it so people arent entirely reliant on workarounds that we provide here (such as upstreaming packages to EPEL, fixing bugs, and whatever else)
 - Leverage cloud-native tech to make our stuff MUCH easier, like kernel pinning, easier rollbacks with tons of tags, everything we already do really
+- Use [Renovate](https://github.com/apps/renovate) and other automation technologies (like [pull](https://github.com/wei/pull)) to make sure everything is up-to-date and if not, it should be as easy as possible to 
+- Enforce strictness and quality assurance as much as possible and prefer stability and correctness over anything else
+- Provide hardware enablement through a separate image right from the main repo, without it having to pass through multiple layers
+- Have a relatively flat layout for the entire organization, `main` -> `achillobator` and thats it.
+- Descope as much stuff as possible, we do NOT need or want to mantain anything if possible
 
 <sub><sup>This is just a draft of this README, please add more stuff here</sup></sub>
