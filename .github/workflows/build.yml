@@ -1,5 +1,5 @@
 ---
-name: build-centos-image
+name: Build Image
 on:
   merge_group:
   pull_request:
