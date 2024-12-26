@@ -16,6 +16,8 @@ dnf -y install @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base}
 dnf group install -y --nobest \
   -x rsyslog* \
   -x cockpit \
+  -x cronie* \
+  -x crontabs \
   -x PackageKit \
   -x PackageKit-command-not-found \
    "Common NetworkManager submodules" \
