@@ -1,6 +1,6 @@
 ARG MAJOR_VERSION="${MAJOR_VERSION:-stream10}"
 
-FROM ghcr.io/ublue-os/config:latest AS config
+FROM ghcr.io/ublue-os/config:latest@sha256:ea9fb226fc54e5d0f8b3244285d439d4f83c65aaadab8fea3743eeaef64770e9 AS config
 FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION
 
 
