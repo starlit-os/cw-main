@@ -7,6 +7,9 @@ mkdir -m 0700 -p /var/roothome
 # Fast track https://gitlab.com/fedora/bootc/base-images/-/merge_requests/71
 ln -sf /run /var/run
 
+# RPMS from Ublue-os config
+dnf -y install /tmp/rpms/ublue-os-{udev-rules,luks}.noarch.rpm
+
 dnf config-manager --set-enabled crb
 dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
 
