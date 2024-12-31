@@ -64,7 +64,15 @@ dnf -y install \
    "sane-backends-drivers-scanners" \
    "xdg-desktop-portal-gnome" \
    "xdg-user-dirs-gtk" \
-   "yelp-tools"
+   "yelp-tools" \
+   "polkit" \
+   "polkit-libs" \
+   "polkit-pkla-compat"
+
+# Force polkit to have the proper permissions since everything breaks without this
+# https://gitlab.com/redhat/centos-stream/rpms/polkit/-/blame/c10s/polkit.spec#L144
+chown root:root /usr/lib/polkit-1
+chmod 0755 /usr/lib/polkit-1
 
 # This adds "[systemd] Failed Units: *" to the bashrc startup
 dnf -y remove console-login-helper-messages
