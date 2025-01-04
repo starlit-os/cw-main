@@ -82,25 +82,16 @@ build $target_image=image_name $tag=default_tag:
 
     BUILD_ARGS=()
     BUILD_ARGS+=("--build-arg" "MAJOR_VERSION=${centos_version}")
-    # BUILD_ARGS+=("--build-arg" "IMAGE_NAME=${image_name}")
-    # BUILD_ARGS+=("--build-arg" "IMAGE_VENDOR=${repo_organization}")
-    # if [[ -z "$(git status -s)" ]]; then
-    #     BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
-    # fi
-
-    LABELS=()
-    LABELS+=("--label" "org.opencontainers.image.title=${image_name}")
-    LABELS+=("--label" "org.opencontainers.image.version=${ver}")
-    # LABELS+=("--label" "ostree.linux=${kernel_release}")
-    LABELS+=("--label" "io.artifacthub.package.readme-url=https://raw.githubusercontent.com/ublue-os/bluefin/bluefin/README.md")
-    LABELS+=("--label" "io.artifacthub.package.logo-url=https://avatars.githubusercontent.com/u/120078124?s=200&v=4")
-    LABELS+=("--label" "org.opencontainers.image.description=CentOS based images")
+    BUILD_ARGS+=("--build-arg" "IMAGE_NAME=${image_name}")
+    BUILD_ARGS+=("--build-arg" "IMAGE_VENDOR=${repo_organization}")
+    if [[ -z "$(git status -s)" ]]; then
+        BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
+    fi
 
     podman build \
         "${BUILD_ARGS[@]}" \
-        "${LABELS[@]}" \
         --pull=newer \
-        --tag "${target_image}:${tag}" \
+        --tag "${image_name}:${tag}" \
         .
 
 _rootful_load_image $target_image=image_name $tag=default_tag:
@@ -137,15 +128,11 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
     mkdir -p "output"
 
     echo "Cleaning up previous build"
-
     if [[ $type == iso ]]; then
-        sudo rm -rf "output/bootiso" || true
+      sudo rm -rf "output/bootiso" || true
     else
-        sudo rm -rf "output/${type}" || true
+      sudo rm -rf "output/${type}" || true
     fi
-
-    sudo rm -rf "output/${type}" || true
-    sudo rm "output/manifest-${type}.json" || true
 
     args="--type ${type}"
 
@@ -158,6 +145,7 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
       -it \
       --privileged \
       --pull=newer \
+      --net=host \
       --security-opt label=type:unconfined_t \
       -v $(pwd)/${config}:/config.toml:ro \
       -v $(pwd)/output:/output \
@@ -234,3 +222,52 @@ run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-
 
 [group('Run Virtal Machine')]
 run-vm-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "iso" "image-builder-iso.config.toml")
+
+[group('Run Virtal Machine')]
+spawn-vm rebuild="0" type="qcow2" ram="6GiB":
+    #!/usr/bin/env bash
+
+    set -euo pipefail
+
+    [ "{{ rebuild }}" -eq 1 ] && echo "Rebuilding the ISO" && just build-vm {{ rebuild }} {{ type }}
+
+    systemd-vmspawn \
+      -M "achillobator" \
+      --console=gui \
+      --cpus=2 \
+      --ram=$(echo 6G| /usr/bin/numfmt --from=iec) \
+      --network-user-mode \
+      --vsock=false --pass-ssh-key=false \
+      -i ./output/**/*.{{ type }}
+
+customize-iso-build:
+    sudo podman run \
+    --rm -it \
+    --privileged \
+    --pull=newer \
+    --net=host \
+    --security-opt label=type:unconfined_t \
+    -v $(pwd)/image-builder-iso.config.toml \
+    -v $(pwd)/output:/output \
+    -v /var/lib/containers/storage:/var/lib/containers/storage \
+    --entrypoint "" \
+    "${bib_image}" \
+    osbuild --store /store --output-directory /output /output/manifest-iso.json  --export bootiso
+
+patch-iso-branding override="0" iso_path="output/bootiso/install.iso":
+    #!/usr/bin/env bash
+    podman run \
+        --rm \
+        -it \
+        --pull=newer \
+        --privileged \
+        -v ./output:/output \
+        -v ./iso_files:/iso_files \
+        registry.fedoraproject.org/fedora:latest \
+        bash -c 'dnf install -y lorax mkksiso && \
+    	mkdir /images && cd /iso_files/product && find . | cpio -c -o | gzip -9cv > /images/product.img && cd / \
+            && mkksiso --add images --volid achillobator-boot /{{ iso_path }} /output/final.iso'
+
+    if [ {{ override }} -ne 0 ] ; then
+        mv output/final.iso {{ iso_path }}
+    fi
