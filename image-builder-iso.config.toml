@@ -13,7 +13,6 @@ reboot
 %post --nochroot
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 flatpak install flathub com.github.tchx84.Flatseal -y
-flatpak install flathub org.keepassxc.KeePassXC -y
 %end
 """
 
