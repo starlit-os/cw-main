@@ -1,6 +1,6 @@
-export repo_organization := env("GITHUB_REPOSITORY_OWNER", "centos-workstation")
-export image_name := env("IMAGE_NAME", "main")
-export centos_version := env("CENTOS_VERSION", "stream10")
+export repo_organization := env("GITHUB_REPOSITORY_OWNER", "starlit-os")
+export image_name := env("IMAGE_NAME", "cw-main")
+export centos_version := env("CENTOS_VERSION", "41")
 export default_tag := env("DEFAULT_TAG", "latest")
 
 # work around issue with upstream image builder,
